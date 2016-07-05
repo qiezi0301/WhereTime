@@ -124,6 +124,7 @@ static DBUtil *instance = nil;
         [self.delegate notify:NO];
     }
     [self close];
+
 }
 
 //拍照添加相片到本地

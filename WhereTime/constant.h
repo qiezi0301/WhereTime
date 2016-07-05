@@ -10,9 +10,14 @@
 #define constant_h
 
 #define USERID @"objectId"
-#define USERNAME @"userName"
+#define USERNAME @"username"
 #define PASSWORD @"password"
-#define PHONENUMBER @"phoneNumber"
+#define PHONENUMBER @"mobilePhoneNumber"
+
+//固定的表名字
+#define WTFRIENDTABLE @"WTFriend"
+#define WTPHOTOTABLE @"WTPhotoTbl"
+#define WTUSERTABLE @"_User"
 
 
 //定义判定设备类型的宏

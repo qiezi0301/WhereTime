@@ -12,6 +12,8 @@
 #import "DBUtil.h"
 #import "AFNetworking.h"
 #import "MBProgressHUD+MJ.h"
+#import <BmobSDK/Bmob.h>
+#import <BmobIMSDK/BmobIMSDK.h>
 
 
 @protocol BMOBUtilDelegate <NSObject>
@@ -28,7 +30,6 @@
 @property(nonatomic,strong)NSDateFormatter *fmt;
 @property(nonatomic,strong)BmobFile *bfile;
 @property(nonatomic,strong)NSString *uid;
-@property(nonatomic,strong)NSString *tblName;
 
 //单例设计模式
 +(BMOBUtil*)getInstance;

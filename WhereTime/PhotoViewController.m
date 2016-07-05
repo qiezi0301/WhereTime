@@ -41,7 +41,7 @@
     
     UIBarButtonItem *leftBtn = [[UIBarButtonItem alloc] initWithTitle:@"" style:UIBarButtonItemStylePlain target:self action:nil];
     self.navigationItem.leftBarButtonItem = leftBtn;
- 
+    
     //实例化拍照控制器创建图像选取控制器-----------拍照-----------
     self.picker = [[UIImagePickerController alloc]init];
     self.picker.allowsEditing = YES;
@@ -67,7 +67,7 @@
     if (self.datasource.count>0) {
         NSUInteger num =self.datasource.count;
         WTPhotoModel *up = [self.datasource objectAtIndex:num-1];
-
+        
         NSString *path = [NSString stringWithFormat:@"%@/Documents/%@",NSHomeDirectory(),up.pic_path];
         UIImage *image = [UIImage imageWithContentsOfFile:path];
         NSLog(@"image===%@",path);
@@ -77,14 +77,14 @@
     
     self.reach = [Reachability reachabilityWithHostname:@"www.bmob.cn"];
     
-
-//登陆同步相片
+    
+    //登陆同步相片
     if (ReachableViaWiFi == [self.reach currentReachabilityStatus]) {
-        NSLog(@"有wifi");
-        [self.bmobUtil syncBmonToFMDB:self.userId];
-
+        NSLog(@"有wifi,开发完全以后再同步");
+        //[self.bmobUtil syncBmonToFMDB:self.userId];
+        
     }
-
+    
     
     if ([self respondsToSelector:@selector(setNeedsStatusBarAppearanceUpdate)]) {
         // iOS 7 //隐藏电池栏为YES，显示为NO
@@ -103,7 +103,7 @@
 -(void)isDownPhoto:(BOOL)b andImage:(NSString *)photoImage{
     [MBProgressHUD hideHUD];
     if (b) {
-         NSLog(@"图片更新完成，显示图片");
+        NSLog(@"图片更新完成，显示图片");
         self.photoImage.image = [self loadImage:photoImage ofType:@"jpg" inDirectory:self.documentsDirectoryPath];
     }
 }
@@ -130,25 +130,25 @@
 
 
 /*
-#pragma mark - Navigation
-
-// In a storyboard-based application, you will often want to do a little preparation before navigation
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    // Get the new view controller using [segue destinationViewController].
-    // Pass the selected object to the new view controller.
-}
-
-
-#pragma mark - 同步执行点击方法
-- (IBAction)syncAction {
-    if (ReachableViaWiFi == [self.reach currentReachabilityStatus]) {
-        NSLog(@"有wifi");
-        [self.bmobUtil syncBmonToFMDB:self.userId];
-    }else{
-        [MBProgressHUD showError:@"请在wifi下同步"];
-    }
-}
-*/
+ #pragma mark - Navigation
+ 
+ // In a storyboard-based application, you will often want to do a little preparation before navigation
+ - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+ // Get the new view controller using [segue destinationViewController].
+ // Pass the selected object to the new view controller.
+ }
+ 
+ 
+ #pragma mark - 同步执行点击方法
+ - (IBAction)syncAction {
+ if (ReachableViaWiFi == [self.reach currentReachabilityStatus]) {
+ NSLog(@"有wifi");
+ [self.bmobUtil syncBmonToFMDB:self.userId];
+ }else{
+ [MBProgressHUD showError:@"请在wifi下同步"];
+ }
+ }
+ */
 
 #pragma mark - 拍照按钮点击方法
 - (IBAction)takeAction:(id)sender {
@@ -189,7 +189,7 @@
     if ([mediaType isEqualToString:(NSString *)kUTTypeImage]) {
         //获取照片的原图
         UIImage *original = [info objectForKey:UIImagePickerControllerOriginalImage];
-
+        
         //等比高度改为2208
         CGSize imageSize = original.size;
         CGFloat targetWidth = (imageSize.width/imageSize.height)*2208;
@@ -197,7 +197,7 @@
         
         //保存原图到媒体库中
         UIImageWriteToSavedPhotosAlbum(original, self, @selector(image:didFinishSavingWithError:contextInfo:), NULL);
-
+        
         //文件名字
         NSDate *date = [NSDate date];
         NSDateFormatter *fmt = [[NSDateFormatter alloc]init];
@@ -212,7 +212,7 @@
         
         //保存到文件夹
         [self saveImage:original2 withFileName:dateString2 ofType:@"jpg" inDirectory:self.documentsDirectoryPath];
-
+        
         //保存到本地数据库
         NSString *updatedAt =[self.util stringFromDateAll:[NSDate date]];
         NSLog(@"当前更新时间updatedAt:%@",updatedAt);
@@ -240,7 +240,7 @@
     UIImage *scaledImage = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
     return scaledImage;
-                            
+    
 }
 
 
@@ -279,7 +279,7 @@
     CGSize size = rect.size;
     CGFloat viewWidth = size.width;
     CGFloat viewHeight = size.height;
-
+    
     if ((image.size.width / image.size.height) < (viewWidth / viewHeight)) {
         newSize.width = image.size.width;
         newSize.height = image.size.width * viewHeight / viewWidth;
@@ -340,7 +340,7 @@
 
 #pragma mark - 播放动画
 - (IBAction)playBtnAction:(id)sender {
-
+    
     //查询数据
     self.datasource = [self.util queryPhotoById:self.userId];
     NSLog(@"本地数据库数量%lu",(unsigned long)self.datasource.count);
@@ -351,7 +351,7 @@
         self.playBtn.hidden  = YES;
         self.userBtn.hidden  = YES;
         self.pickerBtn.hidden  = YES;
-//        self.syncBtn.hidden = YES;
+        //        self.syncBtn.hidden = YES;
         self.friendBtn.hidden = YES;
         //判断重复点击播放
         if (self.photoImage.isAnimating) return;
@@ -383,7 +383,7 @@
             self.playBtn.hidden  = NO;
             self.userBtn.hidden  = NO;
             self.pickerBtn.hidden  = NO;
-//            self.syncBtn.hidden = NO;
+            //            self.syncBtn.hidden = NO;
             self.friendBtn.hidden = NO;
         });
     }

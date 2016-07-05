@@ -10,6 +10,7 @@
 #import "MBProgressHUD+MJ.h"
 
 @interface EditPwdController ()
+@property (weak, nonatomic) IBOutlet UITextField *oldPwdField;
 @property (weak, nonatomic) IBOutlet UITextField *pwdField;
 @property (weak, nonatomic) IBOutlet UITextField *confirmPwdField;
 @property (weak, nonatomic) IBOutlet UIButton *saveBtn;
@@ -21,9 +22,6 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.bmobUtil = [[BMOBUtil alloc]init];
-
-    
     // Do any additional setup after loading the view.
 }
 
@@ -45,16 +43,27 @@
 */
 
 - (IBAction)saveAction {
-    NSLog(@"保存");
+    
     if ([self.pwdField.text isEqualToString:self.confirmPwdField.text]) {
-        WTUserModel *u = [self.bmobUtil getUser];
-        NSString *userID = u.objectId;
-        [self.bmobUtil updatePwd:userID andPwd:self.pwdField.text];
-        [MBProgressHUD showMessage:@"密码保存成功"];
-        [self.navigationController popViewControllerAnimated:YES];
-        NSLog(@"密码一样,保存成功");
-        
-//        [self performSegueWithIdentifier:@"LoginToContact" sender:nil];
+        BmobUser *user = [BmobUser getCurrentUser];
+        [user updateCurrentUserPasswordWithOldPassword:self.oldPwdField.text newPassword:self.pwdField.text block:^(BOOL isSuccessful, NSError *error) {
+            if (isSuccessful) {
+                //用新密码登录
+                [BmobUser loginInbackgroundWithAccount:user.username andPassword:self.pwdField.text block:^(BmobUser *user, NSError *error) {
+                    if (error) {
+                        NSLog(@"login error:%@",error);
+                    } else {
+                        [MBProgressHUD showMessage:@"密码保存成功"];
+                        [self.navigationController popViewControllerAnimated:YES];
+                        NSLog(@"user:%@",user);
+                    }
+                }];
+            } else {
+                NSLog(@"change password error:%@",error);
+                [MBProgressHUD showError:@"旧密码不正确"];
+            }
+        }];
+
     }else{
         UIAlertController *alertView = [UIAlertController alertControllerWithTitle:@"保存密码失败" message:[NSString stringWithFormat:@"两次密码输入不一样"] preferredStyle:UIAlertControllerStyleAlert];
         UIAlertAction *okBtn = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil];

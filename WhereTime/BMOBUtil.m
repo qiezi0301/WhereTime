@@ -30,12 +30,9 @@ static BMOBUtil *instance = nil;
     if (self) {
         self.uid = [self getUser].objectId;
         NSLog(@"BMOB中uid===%@",self.uid);
-        
         if (self.uid!=nil) {
             self.util = [DBUtil getInstance:self.uid];
         }
-        
-        self.tblName = @"WTPhotoTbl";
         return self;
     }
     return nil;
@@ -43,94 +40,76 @@ static BMOBUtil *instance = nil;
 
 -(void)login:(NSString*)phoneNumber{
     NSLog(@"文本框输入的电话号码===%@",phoneNumber);
-    BmobQuery *queryUser = [BmobQuery queryWithClassName:@"UserTbl"];
-    //匹配phonenumber数据进行查询
-    [queryUser whereKey:@"phoneNumber" equalTo:phoneNumber];
-    
-    [queryUser findObjectsInBackgroundWithBlock:^(NSArray *array, NSError *error) {
-        
-        if (array.count > 0) {
-            BmobObject *userObj = [array objectAtIndex:0];
-            NSString *objectId = [userObj objectId];
-            NSString *userName = [userObj objectForKey:@"userName"];
-            NSString *password = [userObj objectForKey:@"password"];
-            NSString *phoneNumber = [userObj objectForKey:@"phoneNumber"];
-            
-            NSLog(@"bmob数据库中的电话号码===%@",phoneNumber);
-            
+    BmobQuery *query = [BmobUser query];
+    [query whereKey:PHONENUMBER equalTo:phoneNumber];
+    [query findObjectsInBackgroundWithBlock:^(NSArray *array, NSError *error) {
+        for (BmobUser *user in array) {
+            NSLog(@"objectid %@",user.objectId);
             //保存到本地
             NSUserDefaults *userDefault = [NSUserDefaults standardUserDefaults];
-            [userDefault setObject:objectId forKey:USERID];
-            [userDefault setObject:userName forKey:USERNAME];
-            [userDefault setObject:password forKey:PASSWORD];
-            [userDefault setObject:phoneNumber forKey:PHONENUMBER];
-            
-            [self.delegate notify:YES andPhoneNumber:phoneNumber];
-            NSLog(@"登录成功，将%@通知给代理",phoneNumber);
-        }else{
+            [userDefault setObject:user.objectId forKey:USERID];
+            [userDefault setObject:user.username forKey:USERNAME];
+            [userDefault setObject:user.password forKey:PASSWORD];
+            [userDefault setObject:user.mobilePhoneNumber forKey:PHONENUMBER];
+        }
+        if (error) {
             //往UserTbl表添加一条phonenumber为phoneNumber的数据
-            BmobObject *newUserObj = [BmobObject objectWithClassName:@"UserTbl"];
-            [newUserObj setObject:phoneNumber forKey:@"phoneNumber"];
-            [newUserObj saveInBackgroundWithResultBlock:^(BOOL isSuccessful, NSError *error) {
-                //进行操作
-                if (error == nil) {
+            BmobUser *bUser = [[BmobUser alloc] init];
+            [bUser setUsername:phoneNumber];
+            [bUser setPassword:@"19991202"];
+            [bUser setMobilePhoneNumber:phoneNumber];
+            
+            
+            [bUser signUpInBackgroundWithBlock:^ (BOOL isSuccessful, NSError *error){
+                if (isSuccessful){
+                    NSLog(@"Sign up successfully");
                     //将电话号码保存到本地
                     NSUserDefaults *userDefault = [NSUserDefaults standardUserDefaults];
                     [userDefault setObject:phoneNumber forKey:PHONENUMBER];
                     
                     [self.delegate notify:YES andPhoneNumber:phoneNumber];
                     NSLog(@"生成新用户成功,将%@通知给代理",phoneNumber);
-                }else{
+                } else {
+                    NSLog(@"%@",error);
                     NSLog(@"生成新用户失败");
                     [self.delegate notify:NO andPhoneNumber:nil];
                 }
             }];
+
         }
     }];
 }
 
 -(void)login:(NSString*)phoneNumber andPassword:(NSString*)pwd{
     NSLog(@"文本框输入的电话号码===%@,%@",phoneNumber,pwd);
-    BmobQuery *queryUser = [BmobQuery queryWithClassName:@"UserTbl"];
-    //匹配phonenumber数据进行查询
-    [queryUser whereKey:@"phoneNumber" equalTo:phoneNumber];
-    [queryUser whereKey:@"password" equalTo:pwd];
     
-    [queryUser findObjectsInBackgroundWithBlock:^(NSArray *array, NSError *error) {
-        if (array.count > 0) {
-            BmobObject *userObj = [array objectAtIndex:0];
-            NSString *objectId = [userObj objectId];
-            NSString *userName = [userObj objectForKey:@"userName"];
-            NSString *password = [userObj objectForKey:@"password"];
-            NSString *phoneNumber = [userObj objectForKey:@"phoneNumber"];
-
-            NSLog(@"bmob数据库中的电话号码===%@",phoneNumber);
+    [BmobUser loginInbackgroundWithAccount:phoneNumber andPassword:pwd block:^(BmobUser *user, NSError *error) {
+        if (user) {
+            NSLog(@"%@",user);
+            BmobUser *bUser = [BmobUser getCurrentUser];
             
             //保存到本地
             NSUserDefaults *userDefault = [NSUserDefaults standardUserDefaults];
-            [userDefault setObject:objectId forKey:USERID];
-            [userDefault setObject:userName forKey:USERNAME];
-            [userDefault setObject:password forKey:PASSWORD];
-            [userDefault setObject:phoneNumber forKey:PHONENUMBER];
-
+            [userDefault setObject:bUser.objectId forKey:USERID];
+            [userDefault setObject:bUser.username forKey:USERNAME];
+            [userDefault setObject:bUser.password forKey:PASSWORD];
+            [userDefault setObject:bUser.mobilePhoneNumber forKey:PHONENUMBER];
+            
             [self.delegate notify:YES andPhoneNumber:phoneNumber];
             NSLog(@"登录成功，将%@通知给代理",phoneNumber);
-        }else{
+        } else {
+            NSLog(@"%@",error);
             [self.delegate notify:NO andPhoneNumber:phoneNumber];
         }
-        
     }];
+    
 }
 
-
+//等出
 -(void)logout{
     [self.util clearnInstance];
     instance = nil;
-    NSUserDefaults *userDefault = [NSUserDefaults standardUserDefaults];
-    [userDefault setObject:nil forKey:USERID];
-    [userDefault setObject:nil forKey:USERNAME];
-    [userDefault setObject:nil forKey:PASSWORD];
-    [userDefault setObject:nil forKey:PHONENUMBER];
+    [BmobUser logout];
 
 }
 
@@ -158,7 +137,7 @@ static BMOBUtil *instance = nil;
 //更新密码
 
 -(void)updatePwd:(NSString*)uid andPwd:(NSString*)pwd{
-    BmobQuery   *bquery = [BmobQuery queryWithClassName:@"UserTbl"];
+    BmobQuery   *bquery = [BmobQuery queryWithClassName:WTUSERTABLE];
     [bquery getObjectInBackgroundWithId:uid block:^(BmobObject *object,NSError *error){
         if (error){
             //进行错误处理
@@ -190,7 +169,7 @@ static BMOBUtil *instance = nil;
     NSLog(@"添加今天数据对象up.addDate==%@",up.addDate);
     
     //通过UID 和addDate查询服务器是否有数据
-    BmobQuery   *bquery = [BmobQuery queryWithClassName:self.tblName];
+    BmobQuery   *bquery = [BmobQuery queryWithClassName:WTPHOTOTABLE];
     [bquery whereKey:@"userID" equalTo:uid];
     [bquery whereKey:@"addDate" equalTo:up.addDate];
     
@@ -244,7 +223,7 @@ static BMOBUtil *instance = nil;
     self.util = [DBUtil getInstance:self.uid];
     
     //查询PhotoTbl表
-    BmobQuery   *bquery = [BmobQuery queryWithClassName:self.tblName];
+    BmobQuery   *bquery = [BmobQuery queryWithClassName:WTPHOTOTABLE];
     [bquery whereKey:@"userID" equalTo:userID];
     
     //根据添加数据顺序查询
@@ -321,7 +300,7 @@ static BMOBUtil *instance = nil;
         WTPhotoModel *p = [photoArr objectAtIndex:idx];
         
         //通过UID查询服务器有几条数据
-        BmobQuery *bquery = [BmobQuery queryWithClassName:self.tblName];
+        BmobQuery *bquery = [BmobQuery queryWithClassName:WTPHOTOTABLE];
         [bquery whereKey:@"userID" equalTo:uid];
         [bquery whereKey:@"addDate" equalTo:p.addDate];
         
@@ -334,7 +313,7 @@ static BMOBUtil *instance = nil;
             }else if (array.count==1){
                 //服务器有这条数据
                 for (BmobObject *obj in array) {
-                    NSLog(@"匹配服务器添加日期>>>>>>>>>>>>>>>>==%@==%@",p.addDate,[obj objectForKey:@"addDate"]);
+                    NSLog(@"匹配服务器添加日期>>>>>>>>>>>>>>>>>>==%@==%@",p.addDate,[obj objectForKey:@"addDate"]);
                     [self comparisonDate:p andObj:obj];
                 }
             }
@@ -455,7 +434,7 @@ static BMOBUtil *instance = nil;
 #pragma mark - 本地添加数据服务器
 -(void)addFMDBToBmob:(WTPhotoModel*)up andBmobFile:(NSObject *)bfile{
     //添加数据
-    BmobObject  *photoTbl = [BmobObject objectWithClassName:self.tblName];
+    BmobObject  *photoTbl = [BmobObject objectWithClassName:WTPHOTOTABLE];
     [photoTbl setObject:up.userID forKey:@"userID"];
     [photoTbl setObject:bfile forKey:@"photoImage"];
     [photoTbl setObject:up.addDate forKey:@"addDate"];
@@ -477,7 +456,7 @@ static BMOBUtil *instance = nil;
 #pragma mark - 本地更新数据服务器
 -(void)upDateFMDBToBmob:(NSString*)oid andUpDate:(NSString*)uda andBmobFile:(NSObject *)bfile{
     //此处是更新操作
-    BmobObject *photoScoreChanged = [BmobObject objectWithoutDataWithClassName:self.tblName objectId:oid];
+    BmobObject *photoScoreChanged = [BmobObject objectWithoutDataWithClassName:WTPHOTOTABLE objectId:oid];
      NSLog(@"此处是更新操作%@",bfile);
     [photoScoreChanged setObject:bfile forKey:@"photoImage"];
     [photoScoreChanged setObject:uda forKey:@"newDateAt"];

@@ -7,12 +7,15 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <BmobSDK/Bmob.h>
+#import <BmobIMSDK/BmobIMSDK.h>
+
 #import "BMOBUtil.h"
-#import "DBUtil.h"
+
 
 @interface UserTableViewController : UITableViewController
 
 @property(nonatomic,strong)BMOBUtil *bmobUtil;
-@property(nonatomic,strong)DBUtil *util;
+
 
 @end

@@ -23,6 +23,8 @@
 //@property (weak, nonatomic) IBOutlet UIButton *syncBtn;
 @property (weak, nonatomic) IBOutlet UIButton *friendBtn;
 
+@property(nonatomic) NSInteger pickerTag;
+
 @end
 
 @implementation PhotoViewController
@@ -81,7 +83,7 @@
     //登陆同步相片
     if (ReachableViaWiFi == [self.reach currentReachabilityStatus]) {
         NSLog(@"有wifi,开发完全以后再同步");
-        //[self.bmobUtil syncBmonToFMDB:self.userId];
+//        [self.bmobUtil syncBmonToFMDB:self.userId];
         
     }
     
@@ -154,7 +156,7 @@
 - (IBAction)takeAction:(id)sender {
     UIAlertController *takeAlert = [UIAlertController alertControllerWithTitle:nil message:nil preferredStyle:UIAlertControllerStyleActionSheet];
     UIAlertAction *photosAlbum = [UIAlertAction actionWithTitle:@"相册" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        
+        self.pickerTag = 0;
         //照片库模式。图像选取控制器以该模式显示时会浏览系统照片库的根目录。
         self.picker.sourceType = UIImagePickerControllerSourceTypeSavedPhotosAlbum;
         [self presentViewController:self.picker animated:YES completion:nil];
@@ -168,6 +170,8 @@
             NSLog(@"没有摄像头");
             return ;
         }
+        
+        self.pickerTag = 1;
         //相机模式，图像选取控制器以该模式显示时可以进行拍照或摄像。
         self.picker.sourceType = UIImagePickerControllerSourceTypeCamera;
         [self presentViewController:self.picker animated:YES completion:nil];
@@ -195,8 +199,12 @@
         CGFloat targetWidth = (imageSize.width/imageSize.height)*2208;
         UIImage* original1 = [self imageWithImageSimple:original scaledToSize:CGSizeMake(targetWidth, 2208)];
         
-        //保存原图到媒体库中
-        UIImageWriteToSavedPhotosAlbum(original, self, @selector(image:didFinishSavingWithError:contextInfo:), NULL);
+        
+        if (self.pickerTag==1) {
+            //保存原图到媒体库中
+            UIImageWriteToSavedPhotosAlbum(original, self, @selector(image:didFinishSavingWithError:contextInfo:), NULL);
+        }
+
         
         //文件名字
         NSDate *date = [NSDate date];

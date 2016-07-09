@@ -26,10 +26,13 @@
 @property(nonatomic,weak)id <BMOBUtilDelegate> delegate;
 
 @property(nonatomic,strong)DBUtil *util;
+@property(nonatomic,strong)DBUtil *friendUtil;
 @property(nonatomic,strong)NSMutableArray *datasource;
 @property(nonatomic,strong)NSDateFormatter *fmt;
 @property(nonatomic,strong)BmobFile *bfile;
 @property(nonatomic,strong)NSString *uid;
+
+
 
 //单例设计模式
 +(BMOBUtil*)getInstance;
@@ -59,4 +62,6 @@
 
 //更新密码
 -(void)updatePwd:(NSString*)uid andPwd:(NSString*)pwd;
+
+-(void)syncFriend:(NSString*)friendUid;
 @end

@@ -8,6 +8,7 @@
 //
 
 #import "UserTableViewController.h"
+#import "LoginViewController.h"
 
 @interface UserTableViewController ()<UITableViewDelegate,UITableViewDataSource>
 
@@ -38,10 +39,15 @@
     //设置tableView不能滚动
     [self.tableView setScrollEnabled:NO];
     
+    //初始化BMOBUtile
+    self.bmobUtil = [BMOBUtil getInstance];
+    
     //去掉多余的线
     self.tableView.tableFooterView = [[UIView alloc]init];
     
 
+    
+    
 }
 
 - (void)didReceiveMemoryWarning {
@@ -63,7 +69,7 @@
 
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-//    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"userCell" forIndexPath:indexPath];
+    //    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"userCell" forIndexPath:indexPath];
     UITableViewCell *cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
     //获取数据源
     NSString *numberString = self.dataList[indexPath.row];
@@ -83,9 +89,15 @@
         case 0 :{
             UIAlertController *alertName = [UIAlertController alertControllerWithTitle:@"退出登录" message:@"是否真的退出" preferredStyle:UIAlertControllerStyleAlert];
             UIAlertAction *okBtn = [UIAlertAction actionWithTitle:@"退出" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+
                 [self.bmobUtil logout];
                 //[self.navigationController popToRootViewControllerAnimated:YES];
-                [self performSegueWithIdentifier:@"PhotoTologin" sender:nil];
+                //  [self performSegueWithIdentifier:@"PhotoTologin" sender:nil];
+                
+                UIStoryboard *storyBoard = [UIStoryboard storyboardWithName:@"Main" bundle:nil];
+                LoginViewController *lvc = [storyBoard instantiateViewControllerWithIdentifier:@"LoginViewController"];
+                [self.navigationController pushViewController:lvc animated:YES];
+                
             }];
             UIAlertAction *cancelBtn = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil];
             [alertName addAction:okBtn];
@@ -101,6 +113,7 @@
             
         case 2 :{
             //同步到本地
+            NSLog(@"self.userID===%@",self.userID);
             [self.bmobUtil syncBmonToFMDB:self.userID];
         }
             break;

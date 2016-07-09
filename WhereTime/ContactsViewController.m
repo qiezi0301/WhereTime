@@ -10,11 +10,14 @@
 #import "UserInfoTableViewCell.h"
 #import "ViewUtil.h"
 #import "UserService.h"
+#import "FriendPhotoViewController.h"
 
 @interface ContactsViewController()<UITableViewDataSource,UITableViewDelegate>
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
 //@property (weak, nonatomic) IBOutlet UIView *inviteView;
 @property (strong, nonatomic) NSMutableArray *userArray;
+
+@property(nonatomic,strong)BMOBUtil *friendBmobUtil;
 
 @end
 
@@ -28,8 +31,8 @@ static NSString *cellId = @"UserInfoCellID";
     _userArray = [[NSMutableArray alloc] init];
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
-
-
+    
+    
 }
 
 - (void)didReceiveMemoryWarning {
@@ -43,19 +46,19 @@ static NSString *cellId = @"UserInfoCellID";
 }
 
 -(void)setupSubviews{
-
-//    UITapGestureRecognizer *tapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(toMessagesVC)];
-//    [self.inviteView addGestureRecognizer:tapRecognizer];
     
-//    UINib *nib = [UINib nibWithNibName:@"UserInfoTableViewCell" bundle:nil];
-//    [self.tableView registerNib:nib forCellReuseIdentifier:cellId];
+    //    UITapGestureRecognizer *tapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(toMessagesVC)];
+    //    [self.inviteView addGestureRecognizer:tapRecognizer];
+    
+    //    UINib *nib = [UINib nibWithNibName:@"UserInfoTableViewCell" bundle:nil];
+    //    [self.tableView registerNib:nib forCellReuseIdentifier:cellId];
     self.tableView.rowHeight = 60;
 }
 
 
 -(void)loadUserFriends{
     [UserService friendsWithCompletion:^(NSArray *array, NSError *error) {
-
+        
         if (error) {
             [self showInfomation:error.localizedDescription];
         }else{
@@ -94,7 +97,7 @@ static NSString *cellId = @"UserInfoCellID";
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
-   NSLog(@"self.dataArray.count----->%lu",(unsigned long)self.userArray.count);
+    NSLog(@"self.dataArray.count----->%lu",(unsigned long)self.userArray.count);
     return self.userArray.count;
 }
 
@@ -119,24 +122,22 @@ static NSString *cellId = @"UserInfoCellID";
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     BmobIMUserInfo *info = self.userArray[indexPath.row];
     
-    BmobIMConversation *conversation = [BmobIMConversation conversationWithId:info.userId conversationType:BmobIMConversationTypeSingle];
-    conversation.conversationTitle =  info.name;
-    [self performSegueWithIdentifier:@"toChatVC" sender:conversation];
+    UIStoryboard *storyBoard = [UIStoryboard storyboardWithName:@"Main" bundle:nil];
+    FriendPhotoViewController *fvc = [storyBoard instantiateViewControllerWithIdentifier:@"FriendPhotoViewController"];
+    fvc.info = info;
+    fvc.friendUId = info.userId;
+    
+    //同步好友图片
+    self.friendBmobUtil = [BMOBUtil getInstance];
+    [self.friendBmobUtil syncFriend:info.userId];
+    
+    [self.navigationController pushViewController:fvc animated:YES];
     
 }
 
 
 #pragma mark - Navigation
 
-// In a storyboard-based application, you will often want to do a little preparation before navigation
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    // Get the new view controller using [segue destinationViewController].
-    // Pass the selected object to the new view controller.
-    if ([segue.identifier isEqualToString:@"toChatVC"]) {
-//        ChatViewController *cvc = segue.destinationViewController;
-//        cvc.conversation = sender;
-    }
-}
 
 
 @end

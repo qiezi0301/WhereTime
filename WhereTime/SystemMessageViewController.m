@@ -12,10 +12,10 @@
 #import "SystemTableViewCell.h"
 #import "UserService.h"
 
-
 @interface SystemMessageViewController ()<UITableViewDelegate,UITableViewDataSource>
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
 @property (strong, nonatomic) NSMutableArray *dataArray;
+
 @end
 
 @implementation SystemMessageViewController

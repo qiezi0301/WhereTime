@@ -35,13 +35,14 @@
     UIBarButtonItem *leftBtn = [[UIBarButtonItem alloc] initWithTitle:@"" style:UIBarButtonItemStylePlain target:self action:nil];
     self.navigationItem.leftBarButtonItem = leftBtn;
     
-    self.bmobUtil = [BMOBUtil getInstance];
-    self.bmobUtil.delegate = self;
+    NSLog(@"登出是否执行");
+//    self.bmobUtil = [BMOBUtil getInstance];
+//    self.bmobUtil.delegate = self;
     //判断是否登录
-    WTUserModel *u = [self.bmobUtil getUser];
-    if (u!=nil) {
-        self.phoneField.text = u.phoneNumber;
-    }
+//    WTUserModel *u = [self.bmobUtil getUser];
+//    if (u!=nil) {
+//        self.phoneField.text = u.phoneNumber;
+//    }
 }
 
 - (void)didReceiveMemoryWarning {
@@ -81,6 +82,9 @@
 }
 
 - (IBAction)loginAction {
+    self.bmobUtil = [BMOBUtil getInstance];
+    self.bmobUtil.delegate = self;
+    
     NSString *phoneNumber = self.phoneField.text;
     NSLog(@"输出电话==%@",phoneNumber);
     NSString *codeNumber = self.codeField.text;

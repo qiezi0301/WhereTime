@@ -9,7 +9,7 @@
 #import "FriendTableViewController.h"
 #import "UserService.h"
 #import "UserInfoTableViewCell.h"
-#import "UserDetailViewController.h"
+
 
 @interface FriendTableViewController ()<UITableViewDelegate,UITableViewDataSource>
 

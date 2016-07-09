@@ -28,7 +28,8 @@ static BMOBUtil *instance = nil;
 - (instancetype)init{
     self = [super init];
     if (self) {
-        self.uid = [self getUser].objectId;
+//        self.uid = [self getUser].objectId;
+        self.uid = [BmobUser getCurrentUser].objectId;
         NSLog(@"BMOB中uid===%@",self.uid);
         if (self.uid!=nil) {
             self.util = [DBUtil getInstance:self.uid];
@@ -96,6 +97,8 @@ static BMOBUtil *instance = nil;
             [userDefault setObject:bUser.mobilePhoneNumber forKey:PHONENUMBER];
             
             [self.delegate notify:YES andPhoneNumber:phoneNumber];
+            //创建表
+            [DBUtil getInstance:bUser.objectId];
             NSLog(@"登录成功，将%@通知给代理",phoneNumber);
         } else {
             NSLog(@"%@",error);
@@ -110,7 +113,7 @@ static BMOBUtil *instance = nil;
     [self.util clearnInstance];
     instance = nil;
     [BmobUser logout];
-
+    NSLog(@"执行登出方法");
 }
 
 -(WTUserModel*)getUser{
@@ -251,12 +254,12 @@ static BMOBUtil *instance = nil;
                 if(photoArr.count ==0){
                     [MBProgressHUD showError:@"更新到本地"];
                     for (BmobObject *obj in array) {
-                        [self syncBmobToFMDB:obj];
+                        [self syncBmobToFMDB:obj andDBUtil:self.util];
                     }
                 }else{
                     [MBProgressHUD showError:@"同步数据，请耐心等待"];
                     for (BmobObject *obj in array) {
-                        [self syncBmobToFMDB:obj];
+                        [self syncBmobToFMDB:obj andDBUtil:self.util];
                     }
                     [self syncFMDBToBmob:self.uid];
 
@@ -266,6 +269,42 @@ static BMOBUtil *instance = nil;
     }];
     
 }
+
+#pragma mark - 同步朋友相片到本地
+-(void)syncFriend:(NSString*)friendUid{
+    //实例化工具类
+    self.friendUtil = [[DBUtil alloc]init:friendUid];
+    
+    //查询PhotoTbl表
+    BmobQuery   *bquery = [BmobQuery queryWithClassName:WTPHOTOTABLE];
+    [bquery whereKey:@"userID" equalTo:friendUid];
+    
+    //根据添加数据顺序查询
+    [bquery orderByAscending:@"createAt"];
+    
+    //通过userid查询本地数据库
+    self.datasource  = [NSMutableArray arrayWithCapacity:10];
+    
+    //查询多条数据
+    [bquery findObjectsInBackgroundWithBlock:^(NSArray *array, NSError *error) {
+        NSLog(@"查询Bmob数据库条数==%lu",(unsigned long)array.count);
+        if (error) {
+            NSLog(@"服务器同步相片到本地>>查询数据库表出错error==%@",error);
+            //进行错误处理
+        }else{
+            if (array.count == 0) {
+                [MBProgressHUD showError:@"好友没相片"];
+            }else{
+                for (BmobObject *obj in array) {
+                    [self syncBmobToFMDB:obj andDBUtil:self.friendUtil];
+                }
+            }
+        }
+    }];
+    
+}
+
+
 
 #pragma mark - 本地上传到服务器
 -(void)addFMDBToBmob:(NSString*)uid{
@@ -314,7 +353,7 @@ static BMOBUtil *instance = nil;
                 //服务器有这条数据
                 for (BmobObject *obj in array) {
                     NSLog(@"匹配服务器添加日期>>>>>>>>>>>>>>>>>>==%@==%@",p.addDate,[obj objectForKey:@"addDate"]);
-                    [self comparisonDate:p andObj:obj];
+                    [self comparisonDate:p andObj:obj andDBUtil:self.util];
                 }
             }
             
@@ -323,7 +362,7 @@ static BMOBUtil *instance = nil;
 }
 
 //服务器同步到本地
--(void)syncBmobToFMDB:(BmobObject *)obj{
+-(void)syncBmobToFMDB:(BmobObject *)obj andDBUtil:(DBUtil *)util{
     
     NSString *oid = [obj objectId];
     NSString *uid = [obj objectForKey:@"userID"];
@@ -332,7 +371,7 @@ static BMOBUtil *instance = nil;
     BmobFile *file = [obj objectForKey:@"photoImage"];
     NSString *url = file.url;
     
-    WTPhotoModel *p = [self.util queryPhotoById:uid andAddDate:addDate];
+    WTPhotoModel *p = [util queryPhotoById:uid andAddDate:addDate];
     NSLog(@"WTPhotoModel对象addDate==%@",p.addDate);
     NSLog(@"oid=%@,uid=%@,addDate=%@",oid,uid,addDate);
     
@@ -345,16 +384,16 @@ static BMOBUtil *instance = nil;
         p.updatedAtNew = updatedAt;
         p.tag = 1;
         //下载相片
-        [self downLoad:url andUserPhoto:p];
+        [self downLoad:url andUserPhoto:p andDBUtil:util];
     }else{
         NSLog(@"本地数据库有,检查更新日期早晚来判断，本地最新就上传，服务器最新就下载");
         p.objectId = oid;
-        [self comparisonDate:p andObj:obj];
+        [self comparisonDate:p andObj:obj andDBUtil:util];
     }
 }
 
 //比较当前对象日期
--(void)comparisonDate:(WTPhotoModel*)p andObj:(BmobObject *)obj{
+-(void)comparisonDate:(WTPhotoModel*)p andObj:(BmobObject *)obj andDBUtil:(DBUtil *)util{
     NSString *oid = [obj objectId];
     NSString *updatedAt = [obj objectForKey:@"newDateAt"] ;
     BmobFile *file = [obj objectForKey:@"photoImage"];
@@ -371,7 +410,7 @@ static BMOBUtil *instance = nil;
             NSLog(@"服务器最新，更新到本地");
             p.updatedAtNew = updatedAt;
             p.tag = 0;
-            [self downLoad:url andUserPhoto:p];
+            [self downLoad:url andUserPhoto:p andDBUtil:util];
             break;
             
         case NSOrderedSame:
@@ -396,7 +435,7 @@ static BMOBUtil *instance = nil;
  */
 
 //下载文件
--(void)downLoad:(NSString*)url andUserPhoto:(WTPhotoModel*)p{
+-(void)downLoad:(NSString*)url andUserPhoto:(WTPhotoModel*)p andDBUtil:(DBUtil *)util{
     NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
     AFURLSessionManager *manager = [[AFURLSessionManager alloc] initWithSessionConfiguration:configuration];
     
@@ -415,9 +454,9 @@ static BMOBUtil *instance = nil;
         p.pic_path = fileName;
         if (p.tag==0) {
             //更新一条本地数据
-            [self.util UpdateUserPhoto:p];
+            [util UpdateUserPhoto:p];
         }else{
-            [self.util addUserPhoto:p];
+            [util addUserPhoto:p];
         }
         
         

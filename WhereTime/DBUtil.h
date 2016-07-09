@@ -39,6 +39,8 @@
 //单例设计模式
 +(DBUtil*)getInstance:(NSString*)uid;
 
+-(instancetype)init:(NSString*)uid;
+
 //清除instance
 -(void)clearnInstance;
 

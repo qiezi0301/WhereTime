@@ -17,15 +17,23 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.bmobUtil = [BMOBUtil getInstance];
+//    self.bmobUtil = [BMOBUtil getInstance];
     
     //判断是否登录
-    WTUserModel *u = [self.bmobUtil getUser];
-    NSLog(@"获取用户信息==%@",u.phoneNumber);
+//    WTUserModel *u = [BmobUser getCurrentUser];
+//    NSLog(@"获取用户信息==%@",u.phoneNumber);
+//    
+//    if (u!=nil) {
+//        [self pushToHomeViewControllerAnimated:YES];
+//    }else{
+//        
+//    }
     
-    if (u!=nil) {
-        [self pushToHomeViewControllerAnimated:YES];
+    NSLog(@"获取用户信息==%@",[BmobUser getCurrentUser]);
+    if ([BmobUser getCurrentUser]) {
+       [self pushToHomeViewControllerAnimated:YES];
     }else{
+        
         [self popToLoginViewControllerAnimated:YES];
     }
 }
